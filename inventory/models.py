@@ -55,7 +55,7 @@ class InventoryHold(models.Model):
     quantity = models.PositiveIntegerField(default=0)  # GA only
     status = enum.EnumField(HOLD_STATUS, default=HOLD_STATUS.ACTIVE)
     expires_at = models.DateTimeField()
-    request_id = models.CharField(max_length=100, unique=True)
+    request_id = models.UUIDField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

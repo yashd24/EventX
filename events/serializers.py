@@ -15,7 +15,7 @@ class FetchEventsSerializer(PaginationBaseSerializer):
 
 class PostEventBaseSerializer(serializers.Serializer):
     event_name = serializers.CharField(max_length=255)
-    venue_id = serializers.IntegerField()
+    venue_id = serializers.UUIDField()
     starts_at = serializers.DateTimeField()
     ends_at = serializers.DateTimeField()
     seat_mode = serializers.ChoiceField(choices=Events.SEAT_MODE.values)
@@ -24,8 +24,25 @@ class PostEventBaseSerializer(serializers.Serializer):
     sales_ends_at = serializers.DateTimeField()
 
 class PostEventSerializer(PostEventBaseSerializer):
-    pass
+    
+    def validate(self, value):
+        if value['starts_at'] >= value['ends_at'] or value['sales_starts_at'] >= value['sales_ends_at']:
+            raise serializers.ValidationError("Start time must be before end time")
+        return value
+
 
 class PatchEventSerializer(PostEventBaseSerializer):
-    event_id = serializers.IntegerField()
+    event_id = serializers.UUIDField()
 
+class VenueBaseSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=255)
+    address = serializers.CharField(max_length=255)
+    city = serializers.CharField(max_length=255)
+    country = serializers.CharField(max_length=255)
+    capacity_hint = serializers.IntegerField()
+
+class PostVenueSerializer(VenueBaseSerializer):
+    pass
+
+class PatchVenueSerializer(VenueBaseSerializer):
+    venue_id = serializers.UUIDField()

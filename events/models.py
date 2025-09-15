@@ -10,6 +10,7 @@ class Venue(models.Model):
     country = models.CharField(max_length=100, blank=True)
     capacity_hint = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         db_table = "venue"
@@ -40,6 +41,7 @@ class Events(models.Model):
     sales_starts_at = models.DateTimeField(null=True, blank=True)
     sales_ends_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "events"
@@ -56,6 +58,8 @@ class TicketType(models.Model):
     currency = models.CharField(max_length=5, default="INR")
     is_active = models.BooleanField(default=True)
     display_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "ticket_type"

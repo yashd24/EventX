@@ -17,8 +17,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from EventX.utils import healthz
+
 urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('events/', include('events.urls')),
     path('bookings/', include('bookings.urls')),
+    path('admin/analytics/', include('analytics.urls')),
+    path('inventory/', include('inventory.urls')),
+    path('healthz/', healthz)
 ]

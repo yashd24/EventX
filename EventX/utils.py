@@ -1,9 +1,12 @@
+from django.http import HttpResponse
 import jwt
 import hashlib
 from django.conf import settings
 from datetime import datetime, timedelta
 from accounts.models import UserActiveSession
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+from events import serializers
 
 
 def generate_password_hash(password):
@@ -85,3 +88,17 @@ def paginate_queryset(queryset, page, rows_per_page):
         recs = paginator.page(paginator.num_pages)  # If page is out of range, deliver last page.
     
     return recs, paginator.count
+
+def validate_enum_str(value, enum_class):
+    try:
+        return getattr(enum_class, value.upper())
+    except AttributeError:
+            valid_options = [e.name for e in enum_class]
+            valid_options_str = ", ".join(valid_options)
+            raise serializers.ValidationError(
+                f"Invalid options '{value}'. Valid options are: {valid_options_str}."
+            )
+    
+# Health Check Function
+def healthz():
+    return HttpResponse("OK")

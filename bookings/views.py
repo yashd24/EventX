@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.db.models import F, Q
 from EventX.helper import BaseAPIClass
 from EventX.utils import paginate_queryset
+from EventX.cache_utils import cache_api_response, invalidate_bookings_cache, invalidate_analytics_cache
 from bookings.models import Booking, BookingItem, Cancellation
 from bookings.serializers import (
     CreateBookingSerializer, 
@@ -48,9 +49,9 @@ class BookingView(BaseAPIClass):
                     
                     # Check if event is still available for booking
                     if event.status != Events.EVENT_STATUS.PUBLISHED:
+                        self.message = "Event is no longer available for booking"
                         self.error_occurred(
                             e=None, 
-                            message="Event is no longer available for booking", 
                             custom_code=4101
                         )
                         return self.get_response()
@@ -58,17 +59,17 @@ class BookingView(BaseAPIClass):
                     # Check sales window
                     now = timezone.now()
                     if event.sales_starts_at and now < event.sales_starts_at:
+                        self.message = "Booking not yet open"
                         self.error_occurred(
                             e=None, 
-                            message="Booking not yet open", 
                             custom_code=4102
                         )
                         return self.get_response()
                     
                     if event.sales_ends_at and now > event.sales_ends_at:
+                        self.message = "Booking window has closed"
                         self.error_occurred(
                             e=None, 
-                            message="Booking window has closed", 
                             custom_code=4103
                         )
                         return self.get_response()
@@ -84,9 +85,9 @@ class BookingView(BaseAPIClass):
                         )
                         
                         if seats.count() != len(seat_ids):
+                            self.message = "Some seats are no longer available"
                             self.error_occurred(
                                 e=None, 
-                                message="Some seats are no longer available", 
                                 custom_code=4104
                             )
                             return self.get_response()
@@ -117,9 +118,9 @@ class BookingView(BaseAPIClass):
                         
                         available_qty = inventory.initial_qty - inventory.sold_qty - inventory.held_qty
                         if available_qty < quantity:
+                            self.message = f"Only {available_qty} tickets available"
                             self.error_occurred(
                                 e=None, 
-                                message=f"Only {available_qty} tickets available", 
                                 custom_code=4105
                             )
                             return self.get_response()
@@ -176,21 +177,30 @@ class BookingView(BaseAPIClass):
                     self.data = booking_serializer.data
                     self.message = "Booking created successfully. Please complete payment within 15 minutes."
                     
+                    # Invalidate caches
+                    invalidate_bookings_cache(user_id=user.user_id, event_id=event_id)
+                    invalidate_analytics_cache(event_id=event_id)
+                    
             else:
                 self.custom_code = 4106
                 self._serializer_errors(serializer.errors)
                 
         except Events.DoesNotExist:
-            self.error_occurred(e=None, message="Event not found", custom_code=4107)
+            self.message = "Event not found"
+            self.error_occurred(e=None, custom_code=4107)
         except TicketType.DoesNotExist:
-            self.error_occurred(e=None, message="Ticket type not found", custom_code=4108)
+            self.message = "Ticket type not found"
+            self.error_occurred(e=None, custom_code=4108)
         except EventInventory.DoesNotExist:
-            self.error_occurred(e=None, message="Event inventory not found", custom_code=4109)
+            self.message = "Event inventory not found"
+            self.error_occurred(e=None, custom_code=4109)
         except Exception as e:
-            self.error_occurred(e, message="Booking creation failed", custom_code=4110)
+            self.message = "Booking creation failed"
+            self.error_occurred(e, custom_code=4110)
         
         return self.get_response()
 
+    @cache_api_response('bookings_history', timeout=30, vary_on_user=True)  # 30 seconds cache, vary by user
     def get(self, request):
         """
         Get user's booking history
@@ -205,8 +215,8 @@ class BookingView(BaseAPIClass):
                 rows_per_page = validated_data.get('rows_per_page', 10)
                 status_filter = validated_data.get('status')
                 
-                # Build query
-                queryset = self.model_class.objects.filter(user_id=user).order_by('-created_at')
+                # Build query with select_related
+                queryset = self.model_class.objects.filter(user_id=user).order_by('-created_at').select_related('events_id', 'events_id__venue_id')
                 
                 if status_filter:
                     queryset = queryset.filter(status=status_filter)
@@ -234,7 +244,8 @@ class BookingView(BaseAPIClass):
                 self._serializer_errors(serializer.errors)
                 
         except Exception as e:
-            self.error_occurred(e, message="Failed to retrieve booking history", custom_code=4112)
+            self.message = "Failed to retrieve booking history"
+            self.error_occurred(e, custom_code=4112)
         
         return self.get_response()
 
@@ -258,17 +269,17 @@ class BookingDetailView(BaseAPIClass):
                 
                 # Check if booking can be cancelled
                 if booking.status == Booking.BOOKING_STATUS.CANCELLED:
+                    self.message = "Booking is already cancelled"
                     self.error_occurred(
                         e=None, 
-                        message="Booking is already cancelled", 
                         custom_code=4121
                     )
                     return self.get_response()
                 
                 if booking.status == Booking.BOOKING_STATUS.EXPIRED:
+                    self.message = "Booking has expired"
                     self.error_occurred(
                         e=None, 
-                        message="Booking has expired", 
                         custom_code=4122
                     )
                     return self.get_response()
@@ -309,8 +320,10 @@ class BookingDetailView(BaseAPIClass):
                 self.message = "Booking cancelled successfully"
                 
         except self.model_class.DoesNotExist:
-            self.error_occurred(e=None, message="Booking not found", custom_code=4123)
+            self.message = "Booking not found"
+            self.error_occurred(e=None, custom_code=4123)
         except Exception as e:
-            self.error_occurred(e, message="Booking cancellation failed", custom_code=4124)
+            self.message = "Booking cancellation failed"
+            self.error_occurred(e, custom_code=4124)
         
         return self.get_response()

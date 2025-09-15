@@ -1,8 +1,7 @@
+from pickle import NONE
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
-import traceback
-import logging
 from traceback import print_exc
 
 
@@ -15,7 +14,7 @@ class BaseAPIClass(APIView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.success = True
-        self.message = "Success"
+        self.message = None
         self.code = status.HTTP_200_OK
         self.custom_code = None
         self.exceptionObj = None
@@ -28,7 +27,7 @@ class BaseAPIClass(APIView):
         """
         to_return = {
             "success": self.success, 
-            "message": self.message, 
+            "message": self.message if self.message else "Success", 
             "data": self.data, 
         }
         if self.custom_code:
@@ -48,7 +47,7 @@ class BaseAPIClass(APIView):
         self.success = False
         self.message = self.message if self.message else "Internal Server Error"
         self.code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        self.custom_code = custom_code
+        self.custom_code = custom_code if custom_code else self.custom_code
         self.data = kwargs
         self.exceptionObj = e
 
@@ -78,7 +77,7 @@ class BaseAPIClass(APIView):
                 message += key + " - " + value[0] + "; "
         return message
 
-    def _serializer_errors(self, errors):
+    def serializer_errors(self, errors):
         """
         Process serializer validation errors and format them into a readable message
         """
