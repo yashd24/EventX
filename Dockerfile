@@ -23,13 +23,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project
 COPY . /app/
 
-# Create directories for static and media files
-RUN mkdir -p /app/staticfiles /app/mediafiles
+# Create directories for static, media, and logs files
+RUN mkdir -p /app/staticfiles /app/mediafiles /app/logs
 
 # Make manage.py executable
 RUN chmod +x /app/manage.py
 
-# Collect static files
+# Collect static files (with proper logging directory)
 RUN python manage.py collectstatic --noinput --clear || true
 
 # Copy entrypoint script
