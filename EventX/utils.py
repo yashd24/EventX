@@ -5,8 +5,7 @@ from django.conf import settings
 from datetime import datetime, timedelta
 from accounts.models import UserActiveSession
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
-from events import serializers
+from rest_framework import serializers
 
 
 def generate_password_hash(password):
@@ -91,7 +90,8 @@ def paginate_queryset(queryset, page, rows_per_page):
 
 def validate_enum_str(value, enum_class):
     try:
-        return getattr(enum_class, value.upper())
+        # Return the enum value (integer) instead of the enum instance
+        return getattr(enum_class, value.upper()).value
     except AttributeError:
             valid_options = [e.name for e in enum_class]
             valid_options_str = ", ".join(valid_options)

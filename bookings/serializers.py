@@ -16,6 +16,7 @@ class CreateBookingSerializer(serializers.Serializer):
 
     def validate(self, data):
         event_id = data.get('event_id')
+        print(event_id)
         ticket_type_id = data.get('ticket_type_id')
         quantity = data.get('quantity')
         seat_ids = data.get('seat_ids', [])

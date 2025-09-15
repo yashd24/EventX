@@ -39,11 +39,20 @@ class EventView(BaseAPIClass):
                
                 # Paginate the queryset
                 events_objs, total_count = paginate_queryset(events_objs, page, rows_per_page)
-                events_objs = model_to_dict(events_objs)
+                
+                # Convert model instances to dictionaries for JSON serialization
+                events_data = []
+                for event in events_objs:
+                    event_dict["event_id"] = event.events_id
+                    event_dict = model_to_dict(event)
+                    # Add related venue data
+                    if event.venue_id:
+                        event_dict['venue'] = model_to_dict(event.venue_id)
+                    events_data.append(event_dict)
                 
                 self.message = "Events fetched successfully"
                 self.data = {
-                    "events": events_objs,
+                    "events": events_data,
                     "page": page,
                     "rows_per_page": rows_per_page,
                     "total_count": total_count
@@ -73,8 +82,6 @@ class EventView(BaseAPIClass):
                 status = serializer.validated_data['status']
                 sales_starts_at = serializer.validated_data['sales_starts_at']
                 sales_ends_at = serializer.validated_data['sales_ends_at']
-
-                print("Venue ID: ", venue_id, type(venue_id))
 
                 # Check if user is admin
                 if user.user_type != User.USER_TYPE.ADMIN:
@@ -111,7 +118,17 @@ class EventView(BaseAPIClass):
                 # Invalidate events cache
                 invalidate_events_cache(event_id=event.events_id, venue_id=venue.venue_id)
                 
-                self.data = model_to_dict(event)
+                self.data = {
+                    "event_id": str(event.events_id),
+                    "event_name": event.event_name,
+                    "starts_at": event.starts_at,
+                    "ends_at": event.ends_at,
+                    "seat_mode": event.seat_mode,
+                    "status": event.status,
+                    "sales_starts_at": event.sales_starts_at,
+                    "sales_ends_at": event.sales_ends_at,
+                    "created_at": event.created_at.isoformat()
+                }
                 self.message = "Event created successfully"
                 
             else:
@@ -145,7 +162,17 @@ class EventView(BaseAPIClass):
                 # Invalidate events cache
                 invalidate_events_cache(event_id=event.events_id, venue_id=event.venue_id.venue_id)
                 
-                self.data = model_to_dict(event)
+                self.data = {
+                    "event_id": str(event.events_id),
+                    "event_name": event.event_name,
+                    "starts_at": event.starts_at,
+                    "ends_at": event.ends_at,
+                    "seat_mode": event.seat_mode,
+                    "status": event.status,
+                    "sales_starts_at": event.sales_starts_at,
+                    "sales_ends_at": event.sales_ends_at,
+                    "created_at": event.created_at.isoformat()
+                }
                 self.message = "Event updated successfully"
                 
             else:
@@ -175,6 +202,10 @@ class VenueView(BaseAPIClass):
                 country = serializer.validated_data['country']
                 capacity_hint = serializer.validated_data['capacity_hint']
 
+                if user.USER_TYPE != User.USER_TYPE.ADMIN:
+                    self.message = "Unauthorized Access"
+                    self.error_occurred(e=None, custom_code=3334)
+                
                 # Check if venue already exists
                 if Venue.objects.filter(name=name).exists():
                     self.message = "Venue already exists"
@@ -182,7 +213,13 @@ class VenueView(BaseAPIClass):
                     return self.get_response()
 
                 
-                venue = Venue.objects.create(**serializer.validated_data)
+                venue = Venue.objects.create(
+                    name = name,
+                    address = address,
+                    city = city,
+                    country = country,
+                    capacity_hint = capacity_hint
+                )
                 self.data = {
                     "venue_id": str(venue.venue_id),
                     "name": venue.name,
@@ -212,7 +249,15 @@ class VenueView(BaseAPIClass):
                 venue = self.get_venue_by_id(venue_id)
                 venue.update(**serializer.validated_data)
                 
-                self.data = model_to_dict(venue)
+                self.data = {
+                    "venue_id": str(venue.venue_id),
+                    "name": venue.name,
+                    "address": venue.address,
+                    "city": venue.city,
+                    "country": venue.country,
+                    "capacity_hint": venue.capacity_hint,
+                    "created_at": venue.created_at.isoformat()
+                }
                 self.message = "Venue updated successfully"
             
             else:

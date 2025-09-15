@@ -6,7 +6,11 @@ from django.contrib.auth.hashers import make_password, check_password
 class User(models.Model):
     class Meta:
         db_table = "user"
-    
+
+    class USER_STATUS(enum.Enum):
+        ACTIVE = 1
+        INACTIVE = 2    
+
     class USER_TYPE(enum.Enum):
         USER = 1
         ADMIN = 2
@@ -18,7 +22,7 @@ class User(models.Model):
     user_type = enum.EnumField(USER_TYPE, default=USER_TYPE.USER)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
-    status = models.BooleanField(default=True)
+    status = enum.EnumField(USER_STATUS, default=USER_STATUS.ACTIVE)
 
     def set_password(self, raw_password):
         """Set password using Django's password hashing"""

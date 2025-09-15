@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from EventX.utils import validate_enum_str
 from events.models import Events
 
 
@@ -18,18 +19,24 @@ class PostEventBaseSerializer(serializers.Serializer):
     venue_id = serializers.UUIDField()
     starts_at = serializers.DateTimeField()
     ends_at = serializers.DateTimeField()
-    seat_mode = serializers.ChoiceField(choices=Events.SEAT_MODE.values)
-    status = serializers.ChoiceField(choices=Events.EVENT_STATUS.values)
+    seat_mode = serializers.CharField(max_length=20)
+    status = serializers.CharField(max_length=20)
     sales_starts_at = serializers.DateTimeField()
     sales_ends_at = serializers.DateTimeField()
 
-class PostEventSerializer(PostEventBaseSerializer):
+    def validate_seat_mode(self,value):
+        return validate_enum_str(value, Events.SEAT_MODE)
+    
+    def validate_status(self,value):
+        return validate_enum_str(value, Events.EVENT_STATUS)
     
     def validate(self, value):
         if value['starts_at'] >= value['ends_at'] or value['sales_starts_at'] >= value['sales_ends_at']:
             raise serializers.ValidationError("Start time must be before end time")
         return value
 
+class PostEventSerializer(PostEventBaseSerializer):
+    pass
 
 class PatchEventSerializer(PostEventBaseSerializer):
     event_id = serializers.UUIDField()

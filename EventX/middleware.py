@@ -77,6 +77,7 @@ class ValidateTokenMiddleware(MiddlewareMixin):
                     'message': 'User not found',
                     'status_code': 401
                 }, status=401)
+            print("Auth Completed")
                 
         except Exception as e:
             return JsonResponse({

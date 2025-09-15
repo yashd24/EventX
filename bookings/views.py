@@ -183,7 +183,7 @@ class BookingView(BaseAPIClass):
                     
             else:
                 self.custom_code = 4106
-                self._serializer_errors(serializer.errors)
+                self.serializer_errors(serializer.errors)
                 
         except Events.DoesNotExist:
             self.message = "Event not found"

@@ -41,10 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # Third-party apps
     'corsheaders',
-    # Local apps
-    'EventX',  # Add EventX app for management commands
+    'EventX', 
     'accounts',
     'analytics',
     'bookings',
@@ -100,15 +98,23 @@ DATABASES = {
 }
 
 # Redis Cache Configuration
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', 'R3dis_pass_2025')
+REDIS_CACHE_URL = os.getenv('REDIS_CACHE_URL', 'redis://redis:6379/1')
+
+# Build Redis URL with authentication
+REDIS_CACHE_URL_AUTH = f'redis://:{REDIS_PASSWORD}@redis:6379/1'
+REDIS_SESSION_URL = f'redis://:{REDIS_PASSWORD}@redis:6379/1'
+
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': os.getenv('REDIS_CACHE_URL', 'redis://localhost:6379/1'),
+        'LOCATION': REDIS_CACHE_URL_AUTH,
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
             'CONNECTION_POOL_KWARGS': {
                 'max_connections': 50,
                 'retry_on_timeout': True,
+                'password': REDIS_PASSWORD,
             },
             'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
             'SERIALIZER': 'django_redis.serializers.json.JSONSerializer',
@@ -118,9 +124,12 @@ CACHES = {
     },
     'sessions': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': os.getenv('REDIS_CACHE_URL', 'redis://localhost:6379/1'),
+        'LOCATION': REDIS_SESSION_URL,
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'CONNECTION_POOL_KWARGS': {
+                'password': REDIS_PASSWORD,
+            },
         },
         'KEY_PREFIX': 'eventx_sessions',
         'TIMEOUT': 86400,  # 24 hours for sessions
@@ -190,8 +199,8 @@ ENABLE_CACHING = os.getenv('ENABLE_CACHING', 'True').lower() == 'true'
 CACHE_TIMEOUT = int(os.getenv('CACHE_TIMEOUT', '300'))  # 5 minutes default
 
 # Celery Configuration
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/2')
-CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/3')
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', f'redis://:{REDIS_PASSWORD}@redis:6379/2')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', f'redis://:{REDIS_PASSWORD}@redis:6379/3')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

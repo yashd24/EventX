@@ -15,6 +15,7 @@ class SignUpView(BaseAPIClass):
                 email = serializer.validated_data['email']
                 name = serializer.validated_data['name']
                 password = serializer.validated_data['password']
+                user_type = serializer.validated_data['user_type']
 
                 # Check if user already exists
                 if self.model_class.objects.filter(email=email).exists():
@@ -25,7 +26,8 @@ class SignUpView(BaseAPIClass):
                 # Create user with hashed password
                 user = self.model_class(
                     email=email, 
-                    name=name
+                    name=name,
+                    user_type=user_type
                 )
                 user.set_password(password)
                 user.save()
@@ -34,16 +36,18 @@ class SignUpView(BaseAPIClass):
                     "user_id": str(user.user_id),
                     "email": user.email,
                     "name": user.name,
+                    "user_type": user.user_type.name,
                     "created_at": user.created_at.isoformat(),
                     "updated_at": user.updated_at.isoformat()
                 }
 
                 self.message = "Sign up successful"
             else: 
-                self._serializer_errors(serializer.errors)
+                self.serializer_errors(serializer.errors)
                 self.custom_code = 1101
         except Exception as e:
-            self.error_occurred(e, message="Sign up failed", custom_code=1102)
+            self.message="Sign up failed"
+            self.error_occurred(e, custom_code=1102)
         return self.get_response()
 
 
