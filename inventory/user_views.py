@@ -2,6 +2,7 @@
 User-facing inventory management views
 """
 from django.db import transaction
+from django.forms import model_to_dict
 from django.utils import timezone
 from EventX.helper import BaseAPIClass
 from EventX.cache_utils import cache_api_response, invalidate_events_cache, invalidate_bookings_cache
@@ -10,7 +11,6 @@ from inventory.serializers import (
     EventAvailabilitySerializer,
     SeatAvailabilitySerializer,
     HoldCreateSerializer,
-    UserHoldSerializer,
 )
 from events.models import Events
 from accounts.models import User
@@ -260,11 +260,10 @@ class UserHoldListView(BaseAPIClass):
             elif status == 'all':
                 pass  # Get all holds
             
-            holds = holds_query.order_by('-created_at')
-            holds_data = UserHoldSerializer(holds, many=True).data
+            holds = model_to_dict(holds_query.order_by('-created_at'))
             
             self.data = {
-                'holds': holds_data,
+                'holds': holds,
                 'total_holds': holds.count(),
                 'active_holds': holds.filter(status=InventoryHold.HOLD_STATUS.ACTIVE).count()
             }
