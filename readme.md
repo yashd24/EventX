@@ -3,7 +3,9 @@
 EventX is a Django-based event management platform with support for accounts, bookings, analytics, inventory, and more.
 It is fully containerized with Docker for easy setup and deployment, and is deployed on Kubernetes for scalability and high availability.
 ---
-Live URL:  http://34.60.239.163 
+Live URL:  http://136.115.41.244
+
+[Postman Collection: EventX API](https://www.postman.com/orange-comet-842903/workspace/eventx-api/collection/27788962-aa7fafa2-bc7d-4144-81ee-576cd62d7c05?action=share&source=copy-link&creator=27788962)
 
 ## 🚀 Features
 - User authentication & account management
