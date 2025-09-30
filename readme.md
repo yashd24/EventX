@@ -2,7 +2,7 @@
 
 EventX is a Django-based event management platform with support for accounts, bookings, analytics, inventory, and more.  
 It is fully containerized with Docker for easy setup and deployment.
-Live URL:  http://34.60.239.163 
+Live URL:  http://136.115.41.244
 ---
 
 ## 🚀 Features
